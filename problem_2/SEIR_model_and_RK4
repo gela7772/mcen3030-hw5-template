@@ -1,0 +1,73 @@
+clc; 
+clear;
+
+%given conditions
+m=1/2000;
+b=0.5;
+w=1/150;
+s=.2;
+g=1/14;
+a=.005;
+x_0=[390,10,0,0];
+N=sum(x_0);
+dt=0.01;
+t_final=60;
+
+%given forcing fxn
+f=@(t,x) [
+    m*N-b*x(3)*x(1)/N+w*x(4)-m*x(1);         %dS/dt
+    b*x(3)*x(1)/N-s*x(2)-m*x(2);                   %dE/dt
+    s*x(2)-g*x(3)-(m+a)*x(3);                        %dI/dt
+    g*x(3)-w*x(4)-m*x(4)
+ ];                              %dR/dt
+
+[t, x] = RK4(f, x_0, dt, t_final)
+
+S=x(:,1);
+E=x(:,2);
+I=x(:,3);
+R=x(:,4);
+
+figure()
+plot(t, S, 'r', 'LineWidth', 2); 
+hold on;
+plot(t, E, 'Color', '#FF8800', 'LineWidth', 2);
+plot(t, I, 'Color', 'y', 'LineWidth',2);
+plot(t, R, 'Color', 'g', 'LineWidth', 2);
+
+xlabel('Time');
+ylabel('Population');
+title('SEIR Model');
+legend('Susceptible', 'Exposed', 'Infected', 'Recovered');
+grid on;
+
+
+
+%RK4 FUNCTION
+function [t, x] = RK4 (f, x_0, dt, t_final)
+    %f is horizontal array forcing fxn
+    %x_0 is a horizontal array of intial conditions
+    %dt is time step
+    %t_final is stopping time
+    %t is column vector of time points
+    %X is soln matrix that is t long and x_0 wide
+
+    t = (0:dt:t_final)'; %produce t vector that is the inverse of horizontal
+    x = zeros(length(t), length(x_0)); %intialize matrix length t and width x_0
+    x(1,:) = x_0(:)'; %makes x_0 the first row of matrix
+
+    %RK4 
+    for i = 1 : length(t)-1
+        xi = x(i, :)'; %turns the iteration's row into column vector
+        ti = t(i);
+
+        %using each k to get to the next 
+        k1 = f(ti, xi);
+        k2 = f(ti+dt/2, xi+dt/2*k1);
+        k3 = f(ti+dt/2, xi+dt/2*k2);
+        k4 = f(ti+dt, xi+dt*k3);
+
+        x(i+1,:) = (xi + (dt/6)*(k1 + 2*k2 + 2*k3 + k4))';
+
+    end
+end
